@@ -8,12 +8,6 @@
 
 using namespace std;
 
-const string PROGRAM_PASSWORD = "admin";
-
-bool checkAccessPassword(const string& password) {
-    return password == PROGRAM_PASSWORD;
-}
-
 string generateRandomString(size_t length) {
     const string chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
     
@@ -31,14 +25,8 @@ string generateRandomString(size_t length) {
     return result;
 }
 
-string deriveKey(const string& password, size_t keyLength) {
-    // Use PBKDF2 instead of simple SHA256
-    string salt = generateRandomString(16);
-    return pbkdf2(password, salt, keyLength, PBKDF2_ITERATIONS);
-}
-
 string pbkdf2(const string& password, const string& salt, size_t keyLength, int iterations) {
-    unsigned char* key = new unsigned char[keyLength];
+    vector<unsigned char> key(keyLength);
     
     // Use PKCS5_PBKDF2_HMAC with SHA-256
     if (PKCS5_PBKDF2_HMAC(
@@ -46,17 +34,13 @@ string pbkdf2(const string& password, const string& salt, size_t keyLength, int 
             reinterpret_cast<const unsigned char*>(salt.c_str()), salt.length(),
             iterations,
             EVP_sha256(),
-            keyLength, key) != 1) {
+            keyLength, key.data()) != 1) {
         cerr << "Error generating key using PBKDF2" << endl;
-        delete[] key;
         return "";
     }
     
     // Convert to string for our API
-    string result(reinterpret_cast<char*>(key), keyLength);
-    
-    // Clean up
-    delete[] key;
+    string result(reinterpret_cast<char*>(key.data()), keyLength);
     return result;
 }
 

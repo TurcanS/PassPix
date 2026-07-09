@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(enc_dec)
+project(passpix)
 
 set(CMAKE_CXX_STANDARD 11)
 
@@ -61,13 +61,13 @@ set(SOURCES
 )
 
 # Define the executable
-add_executable(enc_dec ${SOURCES})
+add_executable(passpix ${SOURCES})
 
 # Link OpenSSL libraries (FindOpenSSL provides imported targets on modern CMake)
 if(TARGET OpenSSL::SSL AND TARGET OpenSSL::Crypto)
-    target_link_libraries(enc_dec OpenSSL::SSL OpenSSL::Crypto)
+    target_link_libraries(passpix OpenSSL::SSL OpenSSL::Crypto)
 else()
     # Fallback to using the variables if imported targets aren't available
-    target_include_directories(enc_dec PRIVATE ${OPENSSL_INCLUDE_DIR})
-    target_link_libraries(enc_dec PRIVATE ${OPENSSL_SSL_LIBRARY} ${OPENSSL_CRYPTO_LIBRARY})
+    target_include_directories(passpix PRIVATE ${OPENSSL_INCLUDE_DIR})
+    target_link_libraries(passpix PRIVATE ${OPENSSL_SSL_LIBRARY} ${OPENSSL_CRYPTO_LIBRARY})
 endif()

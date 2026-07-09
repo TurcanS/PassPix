@@ -30,7 +30,7 @@
 *.exe
 *.out
 *.app
-enc_dec
+passpix
 
 # Build directories
 build/

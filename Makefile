@@ -24,7 +24,7 @@ else
 endif
 
 # Project settings
-TARGET = enc_dec$(EXE_EXT)
+TARGET = passpix$(EXE_EXT)
 BUILD_DIR = build
 OBJ_DIR = $(BUILD_DIR)/obj
 

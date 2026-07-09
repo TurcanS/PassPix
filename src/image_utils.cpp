@@ -11,7 +11,17 @@
 
 using namespace std;
 
-const string PROGRAM_PASSWORD = "admin"; // Moving this constant here since it's used in the image functions
+// Image dimensions
+const unsigned IMAGE_WIDTH = 720;
+const unsigned IMAGE_HEIGHT = 720;
+
+// Metadata embedding offsets (byte indices in the RGBA pixel buffer)
+// Offsets relative to the beginning or end of pixel rows
+const size_t SALT_OFFSET = 20;
+const size_t IV_OFFSET = 100;
+const size_t HASH_OFFSET = 200;
+const size_t HMAC_OFFSET = 400;
+const size_t HMAC_REAR_OFFSET = 40; // Bytes from end of image for redundant HMAC
 
 // Helper function to generate a smooth gradient
 void generateGradient(vector<unsigned char>& image, unsigned width, unsigned height, 
@@ -117,9 +127,9 @@ void addShapes(vector<unsigned char>& image, unsigned width, unsigned height, in
     }
 }
 
-void encryptPassword(const string& password) {
-    const unsigned width = 720;
-    const unsigned height = 720;
+void encryptPassword(const string& masterPassphrase, const string& password) {
+    const unsigned width = IMAGE_WIDTH;
+    const unsigned height = IMAGE_HEIGHT;
     const unsigned totalPixels = width * height;
     
     vector<unsigned char> image;
@@ -156,7 +166,7 @@ void encryptPassword(const string& password) {
     
     // Continue with encryption as before
     string salt = generateRandomString(16);
-    string key = pbkdf2(salt, salt, AES_KEY_SIZE, PBKDF2_ITERATIONS);
+    string key = pbkdf2(masterPassphrase, salt, AES_KEY_SIZE, PBKDF2_ITERATIONS);
     
     vector<unsigned char> iv(AES_BLOCK_SIZE);
     RAND_bytes(iv.data(), AES_BLOCK_SIZE);
@@ -184,15 +194,15 @@ void encryptPassword(const string& password) {
     // Store salt at two locations (combined loop)
     for (size_t i = 0; i < salt.length(); i++) {
         const unsigned char saltChar = static_cast<unsigned char>(salt[i]);
-        image[20 + i] = saltChar;
-        image[width * 4 - 20 - i] = saltChar;
+        image[SALT_OFFSET + i] = saltChar;
+        image[width * 4 - SALT_OFFSET - i] = saltChar;
     }
     
     // Store IV at three locations (combined loop)
     for (int i = 0; i < AES_BLOCK_SIZE; i++) {
         const unsigned char ivByte = iv[i];
-        image[100 + i] = ivByte;
-        image[width * 4 - 100 - i] = ivByte;
+        image[IV_OFFSET + i] = ivByte;
+        image[width * 4 - IV_OFFSET - i] = ivByte;
         image[(height/2 * width + width/2) * 4 + i] = ivByte;
     }
     
@@ -200,8 +210,8 @@ void encryptPassword(const string& password) {
     const size_t hashLen = min(static_cast<size_t>(32), passwordHash.length());
     for (size_t i = 0; i < hashLen; i++) {
         const unsigned char hashChar = static_cast<unsigned char>(passwordHash[i]);
-        image[200 + i] = hashChar;
-        image[totalPixels * 4 - 200 - i] = hashChar;
+        image[HASH_OFFSET + i] = hashChar;
+        image[totalPixels * 4 - HASH_OFFSET - i] = hashChar;
     }
     
     // Create indices for embedding encrypted data
@@ -235,9 +245,9 @@ void encryptPassword(const string& password) {
     const size_t hmacSize = min(hmac.size(), static_cast<size_t>(HMAC_SIZE));
     for (size_t i = 0; i < hmacSize; i++) {
         const unsigned char hmacByte = hmac[i];
-        image[imageSize - 40 - i] = hmacByte;
-        image[imageSize - 40 - HMAC_SIZE - i] = hmacByte;
-        image[400 + i] = hmacByte;
+        image[imageSize - HMAC_REAR_OFFSET - i] = hmacByte;
+        image[imageSize - HMAC_REAR_OFFSET - HMAC_SIZE - i] = hmacByte;
+        image[HMAC_OFFSET + i] = hmacByte;
     }
     
     string filename = "enc_" + generateRandomString(10) + ".png";
@@ -250,7 +260,7 @@ void encryptPassword(const string& password) {
     }
 }
 
-string decryptPassword(const string& filename) {
+string decryptPassword(const string& masterPassphrase, const string& filename) {
     vector<unsigned char> image;
     unsigned width, height;
     
@@ -298,8 +308,8 @@ string decryptPassword(const string& filename) {
     bool saltCorrupted = false;
     
     for (size_t i = 0; i < 16; i++) {
-        unsigned char salt1 = image[20 + i];
-        unsigned char salt2 = image[width * 4 - 20 - i];
+        unsigned char salt1 = image[SALT_OFFSET + i];
+        unsigned char salt2 = image[width * 4 - SALT_OFFSET - i];
         
         if (salt1 == salt2) {
             salt.push_back(salt1);
@@ -318,8 +328,8 @@ string decryptPassword(const string& filename) {
     bool ivCorrupted = false;
     
     for (int i = 0; i < AES_BLOCK_SIZE; i++) {
-        unsigned char iv1 = image[100 + i];
-        unsigned char iv2 = image[width * 4 - 100 - i];
+        unsigned char iv1 = image[IV_OFFSET + i];
+        unsigned char iv2 = image[width * 4 - IV_OFFSET - i];
         unsigned char iv3 = image[(height/2 * width + width/2) * 4 + i];
         
         if (iv1 == iv2 || iv1 == iv3) {
@@ -344,8 +354,8 @@ string decryptPassword(const string& filename) {
         indices.push_back(idx);
     }
     
-    // Use PBKDF2 with just salt, not mixing the program password for decryption
-    string key = pbkdf2(salt, salt, AES_KEY_SIZE, PBKDF2_ITERATIONS);
+    // Use PBKDF2 with master passphrase and salt for key derivation
+    string key = pbkdf2(masterPassphrase, salt, AES_KEY_SIZE, PBKDF2_ITERATIONS);
     
     // Derive the seed from key and salt instead of reading it from the image
     unsigned seed = deriveSeedFromKey(key, salt);
@@ -382,9 +392,9 @@ string decryptPassword(const string& filename) {
     // Extract stored HMAC from multiple locations (combined into arrays)
     vector<unsigned char> storedHmac1(HMAC_SIZE), storedHmac2(HMAC_SIZE), storedHmac3(HMAC_SIZE);
     for (int i = 0; i < HMAC_SIZE; i++) {
-        storedHmac1[i] = image[imageSize - 40 - i];
-        storedHmac2[i] = image[imageSize - 40 - HMAC_SIZE - i];
-        storedHmac3[i] = image[400 + i];
+        storedHmac1[i] = image[imageSize - HMAC_REAR_OFFSET - i];
+        storedHmac2[i] = image[imageSize - HMAC_REAR_OFFSET - HMAC_SIZE - i];
+        storedHmac3[i] = image[HMAC_OFFSET + i];
     }
     
     // Verify with each HMAC and consider verification successful if any match

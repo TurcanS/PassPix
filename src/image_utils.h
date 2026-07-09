@@ -9,8 +9,8 @@
 const size_t METADATA_BOUNDARY = 300;
 const size_t DATA_EMBEDDING_START = 304; // METADATA_BOUNDARY + 4 bytes
 
-void encryptPassword(const std::string& password);
-std::string decryptPassword(const std::string& filename);
+void encryptPassword(const std::string& masterPassphrase, const std::string& password);
+std::string decryptPassword(const std::string& masterPassphrase, const std::string& filename);
 std::vector<std::string> listEncFiles();
 void generateGradient(std::vector<unsigned char>& image, unsigned width, unsigned height, 
                      const std::vector<unsigned char>& color1, const std::vector<unsigned char>& color2);
