@@ -10,7 +10,7 @@ using namespace std;
 void showMenu();
 
 int main() {
-    cout << "PassPix — Password Encryption & Steganographic Storage" << endl;
+    cout << "PassPix" << endl;
     cout << string(55, '=') << endl;
     
     while (true) {
