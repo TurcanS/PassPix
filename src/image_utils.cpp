@@ -12,8 +12,8 @@
 using namespace std;
 
 // Image dimensions
-const unsigned IMAGE_WIDTH = 720;
-const unsigned IMAGE_HEIGHT = 720;
+const unsigned IMAGE_WIDTH = 1920;
+const unsigned IMAGE_HEIGHT = 1080;
 
 // Metadata embedding offsets (byte indices in the RGBA pixel buffer)
 // Offsets relative to the beginning or end of pixel rows
@@ -44,7 +44,7 @@ void generateGradient(vector<unsigned char>& image, unsigned width, unsigned hei
             image[idx] = static_cast<unsigned char>(color1[0] * oneMinusBlend + color2[0] * blend);
             image[idx + 1] = static_cast<unsigned char>(color1[1] * oneMinusBlend + color2[1] * blend);
             image[idx + 2] = static_cast<unsigned char>(color1[2] * oneMinusBlend + color2[2] * blend);
-            image[idx + 3] = 255; // Alpha channel
+            image[idx + 3] = static_cast<unsigned char>(color1[3] * oneMinusBlend + color2[3] * blend);
         }
     }
 }
@@ -144,10 +144,12 @@ void encryptPassword(const string& masterPassphrase, const string& password) {
     vector<unsigned char> color1 = {
         static_cast<unsigned char>(colorDist(rng)),
         static_cast<unsigned char>(colorDist(rng)),
+        static_cast<unsigned char>(colorDist(rng)),
         static_cast<unsigned char>(colorDist(rng))
     };
     
     vector<unsigned char> color2 = {
+        static_cast<unsigned char>(colorDist(rng)),
         static_cast<unsigned char>(colorDist(rng)),
         static_cast<unsigned char>(colorDist(rng)),
         static_cast<unsigned char>(colorDist(rng))

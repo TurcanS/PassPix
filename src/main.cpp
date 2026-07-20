@@ -67,14 +67,10 @@ int main() {
                 cout << (i + 1) << ". " << files[i] << endl;
             }
             
-            cout << "Enter master passphrase: ";
-            string masterPassphrase;
-            getline(cin, masterPassphrase);
-            
             size_t fileIndex;
             cout << "Enter file number: ";
             cin >> fileIndex;
-            
+
             if (cin.fail()) {
                 cin.clear();
                 cin.ignore(numeric_limits<streamsize>::max(), '\n');
@@ -82,6 +78,10 @@ int main() {
                 continue;
             }
             cin.ignore();
+
+            cout << "Enter master passphrase: ";
+            string masterPassphrase;
+            getline(cin, masterPassphrase);
             
             if (fileIndex < 1 || fileIndex > files.size()) {
                 cout << "Invalid selection." << endl;
