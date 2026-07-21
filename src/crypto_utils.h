@@ -3,24 +3,25 @@
 #include <string>
 #include <vector>
 #include <openssl/evp.h>
-#include <openssl/rand.h>
 #include <openssl/sha.h>
-#include <openssl/hmac.h>
-#include <openssl/kdf.h>
-#include <openssl/crypto.h>
 
-const int AES_KEY_SIZE = 32;
-const int AES_BLOCK_SIZE = 16;
-const int HMAC_SIZE = 32;
-const int PBKDF2_ITERATIONS = 100000;
+const int KEY_SIZE = 32;
+const int NONCE_SIZE = 24;
+const int MAC_SIZE = 16;
 
 std::string sha256(const std::string& data);
-std::string pbkdf2(const std::string& password, const std::string& salt, size_t keyLength, int iterations);
-std::vector<unsigned char> aesEncrypt(const std::string& plaintext, const std::string& key, std::vector<unsigned char>& iv);
-std::string aesDecrypt(const std::vector<unsigned char>& ciphertext, const std::string& key, const std::vector<unsigned char>& iv);
+
+std::string deriveKey(const std::string& password, const std::string& salt, size_t keyLength);
+
+std::vector<unsigned char> encrypt(const std::string& plaintext, const std::string& key);
+std::string decrypt(const std::vector<unsigned char>& ciphertext, const std::string& key);
+
 std::string generateRandomString(size_t length);
 
-std::vector<unsigned char> generateHMAC(const std::vector<unsigned char>& data, const std::string& key);
-bool verifyHMAC(const std::vector<unsigned char>& data, const std::vector<unsigned char>& hmac, const std::string& key);
+void secureWipe(void* data, size_t size);
+void lockMem(void* data, size_t size);
+void unlockMem(void* data, size_t size);
 
 unsigned deriveSeedFromKey(const std::string& key, const std::string& salt);
+
+void initCrypto();
