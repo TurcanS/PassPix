@@ -1,5 +1,6 @@
 #include "../Include/lodepng.h"
 #include "image_utils.h"
+#include "crypto_utils.h"
 #include <iostream>
 #include <vector>
 #include <string>
@@ -10,6 +11,7 @@
 void showMenu();
 
 int main() {
+    initCrypto();
     std::cout << "PassPix" << std::endl;
     std::cout << std::string(55, '=') << std::endl;
     

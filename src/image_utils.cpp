@@ -23,7 +23,6 @@ void encryptPassword(const std::string& masterPassphrase, const std::string& pas
     std::random_device rd;
     std::mt19937 rng(rd());
 
-    // Generate image
     std::uniform_int_distribution<int> colorDist(0, 255);
     std::vector<unsigned char> color1 = {
         static_cast<unsigned char>(colorDist(rng)),
@@ -45,25 +44,28 @@ void encryptPassword(const std::string& masterPassphrase, const std::string& pas
     addShapes(image, width, height, numShapes, rng);
     addNaturalNoise(image, width, height, 10.0f);
 
-    // Encrypt password
     std::string salt = generateRandomString(SALT_LENGTH);
-    std::string key = pbkdf2(masterPassphrase, salt, AES_KEY_SIZE, PBKDF2_ITERATIONS);
 
-    std::vector<unsigned char> iv(AES_BLOCK_SIZE);
-    RAND_bytes(iv.data(), AES_BLOCK_SIZE);
+    std::string key = deriveKey(masterPassphrase, salt, KEY_SIZE);
+    lockMem(&key[0], key.size());
+
+    std::vector<unsigned char> encryptedBlob = encrypt(password, key);
+
+    std::vector<unsigned char> nonce(encryptedBlob.begin(),
+                                      encryptedBlob.begin() + NONCE_SIZE);
 
     std::string passwordHash = sha256(password);
-    std::vector<unsigned char> encryptedData = aesEncrypt(password, key, iv);
 
-    // Build payload and embed
     EncryptedPayload payload;
-    payload.encryptedData = encryptedData;
+    payload.encryptedData = encryptedBlob;
     payload.salt = salt;
-    payload.iv = iv;
+    payload.iv = nonce;
     payload.passwordHash = passwordHash;
-    payload.hmac = generateHMAC(encryptedData, key);
 
     embedPayload(image, width, height, payload, key);
+
+    secureWipe(&key[0], key.size());
+    unlockMem(&key[0], key.size());
 
     std::string filename = "enc_" + generateRandomString(FILENAME_RANDOM_LENGTH) + ".png";
     unsigned error = lodepng::encode(filename, image, width, height);
@@ -84,7 +86,6 @@ std::string decryptPassword(const std::string& masterPassphrase, const std::stri
         return "";
     }
 
-    // Peek at salt from known positions (no key needed — fixed offsets)
     std::string salt;
     salt.reserve(SALT_LENGTH);
     for (size_t i = 0; i < SALT_LENGTH; i++) {
@@ -92,25 +93,15 @@ std::string decryptPassword(const std::string& masterPassphrase, const std::stri
         salt.push_back(static_cast<char>(s));
     }
 
-    // Derive key from master passphrase + extracted salt
-    std::string key = pbkdf2(masterPassphrase, salt, AES_KEY_SIZE, PBKDF2_ITERATIONS);
+    std::string key = deriveKey(masterPassphrase, salt, KEY_SIZE);
+    lockMem(&key[0], key.size());
 
-    // Extract everything using the correct key
     EncryptedPayload payload = extractPayload(image, width, height, key);
 
-    // Re-derive key with redundancy-recovered salt from payload for consistency
-    key = pbkdf2(masterPassphrase, payload.salt, AES_KEY_SIZE, PBKDF2_ITERATIONS);
-
-    // Verify HMAC
-    bool hmacVerified = verifyHMAC(payload.encryptedData, payload.hmac, key);
-    if (!hmacVerified) {
-        std::cout << "Warning: HMAC verification failed. Data integrity cannot be guaranteed." << std::endl;
-    } else {
-        std::cout << "HMAC verification successful. Data integrity confirmed." << std::endl;
-    }
+    key = deriveKey(masterPassphrase, payload.salt, KEY_SIZE);
 
     try {
-        std::string password = aesDecrypt(payload.encryptedData, key, payload.iv);
+        std::string password = decrypt(payload.encryptedData, key);
 
         if (!password.empty()) {
             std::string passwordHash = sha256(password);
@@ -126,8 +117,13 @@ std::string decryptPassword(const std::string& masterPassphrase, const std::stri
                 std::cout << "Warning: Password verification failed. The data may be corrupted." << std::endl;
             }
         }
+
+        secureWipe(&key[0], key.size());
+        unlockMem(&key[0], key.size());
         return password;
     } catch (...) {
+        secureWipe(&key[0], key.size());
+        unlockMem(&key[0], key.size());
         std::cout << "Error: Exception during decryption process." << std::endl;
         return "";
     }
