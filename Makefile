@@ -81,7 +81,7 @@ $(TARGET): $(OBJECTS)
 # Compile source files
 $(OBJ_DIR)/%.o: %.cpp
 	@echo Compiling $<
-	@$(MKDIR) $(dir $@) 2>/dev/null || true
+	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 
 # Clean build artifacts
