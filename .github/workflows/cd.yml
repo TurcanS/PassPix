@@ -1,0 +1,92 @@
+name: CD
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: linux
+            packages: build-essential libssl-dev libsodium-dev
+          - os: windows-latest
+            target: windows
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: ${{ matrix.target == 'windows' && 'msys2 {0}' || 'bash' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux deps
+        if: matrix.target == 'linux'
+        run: sudo apt-get update && sudo apt-get install -y ${{ matrix.packages }}
+
+      - uses: msys2/setup-msys2@v2
+        if: matrix.target == 'windows'
+        with:
+          msystem: ucrt64
+          update: true
+          install: >-
+            base-devel
+            mingw-w64-ucrt-x86_64-toolchain
+            mingw-w64-ucrt-x86_64-openssl
+            mingw-w64-ucrt-x86_64-libsodium
+
+      - name: Build
+        run: make
+
+      - name: Rename binary
+        run: |
+          if [ "${{ matrix.target }}" = "windows" ]; then
+            mv passpix passpix.exe
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: passpix-${{ matrix.target }}
+          path: passpix*
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: passpix-*
+          path: release/
+
+      - name: Organize and hash
+        run: |
+          mkdir -p dist
+          find release/ -name "passpix*" -type f | while read f; do
+            cp "$f" dist/
+          done
+          ls -la dist/
+          echo "LINUX_HASH=$(sha256sum dist/passpix-linux/passpix 2>/dev/null | awk '{print $1}' || echo 'N/A')" >> $GITHUB_ENV
+          echo "WIN_HASH=$(sha256sum dist/passpix-windows/passpix.exe 2>/dev/null | awk '{print $1}' || echo 'N/A')" >> $GITHUB_ENV
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          body: |
+            ## Hashes (SHA-256)
+
+            | Platform | Binary | Hash |
+            |---|---|---|
+            | Linux | `passpix` | `${{ env.LINUX_HASH }}` |
+            | Windows | `passpix.exe` | `${{ env.WIN_HASH }}` |
+          files: |
+            dist/passpix-linux/passpix
+            dist/passpix-windows/passpix.exe
