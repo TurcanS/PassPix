@@ -137,5 +137,5 @@ This file currently does two unrelated things: generates aesthetic images and hi
 
 ---
 
-## Open Decisions
-- **Catch2 version**: v3 amalgamated (vendored) vs CMake FetchContent. Vendored is simpler for Makefile users; FetchContent is cleaner for CMake-only users. Decision needed before implementation.
+## Decisions
+- **Catch2 approach**: Vendored amalgamated (`catch_amalgamated.hpp` + `catch_amalgamated.cpp` in `test/`). Works with both Makefile and CMake, zero network dependency, self-contained.
