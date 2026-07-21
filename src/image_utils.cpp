@@ -3,7 +3,7 @@
 #include <iostream>
 #include <random>
 #include <algorithm>
-#include <dirent.h>
+#include <filesystem>
 #include <iomanip>
 #include <sstream>
 #include <map>
@@ -450,20 +450,17 @@ std::string decryptPassword(const std::string& masterPassphrase, const std::stri
 
 std::vector<std::string> listEncFiles() {
     std::vector<std::string> files;
-    DIR* dir;
-    struct dirent* ent;
-    
-    if ((dir = opendir(".")) != nullptr) {
-        while ((ent = readdir(dir)) != nullptr) {
-            std::string filename = ent->d_name;
-            if (filename.length() > 4 && 
-                filename.substr(0, 4) == "enc_" &&
-                filename.substr(filename.length() - 4) == ".png") {
-                files.push_back(filename);
-            }
+    namespace fs = std::filesystem;
+    std::error_code ec;
+
+    for (const auto& entry : fs::directory_iterator(".", ec)) {
+        if (ec) break;
+        std::string filename = entry.path().filename().string();
+        if (filename.length() > 4 &&
+            filename.substr(0, 4) == "enc_" &&
+            filename.substr(filename.length() - 4) == ".png") {
+            files.push_back(filename);
         }
-        closedir(dir);
     }
-    
     return files;
 }
