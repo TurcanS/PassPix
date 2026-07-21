@@ -40,12 +40,6 @@ jobs:
       - name: Build
         run: make
 
-      - name: Rename binary
-        run: |
-          if [ "${{ matrix.target }}" = "windows" ]; then
-            mv passpix passpix.exe
-          fi
-
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
@@ -69,12 +63,13 @@ jobs:
       - name: Organize and hash
         run: |
           mkdir -p dist
-          find release/ -name "passpix*" -type f | while read f; do
-            cp "$f" dist/
-          done
+          # Linux binary
+          cp release/passpix-linux/passpix dist/passpix-linux
+          # Windows binary - rename to .exe
+          cp release/passpix-windows/passpix dist/passpix.exe
           ls -la dist/
-          echo "LINUX_HASH=$(sha256sum dist/passpix-linux/passpix 2>/dev/null | awk '{print $1}' || echo 'N/A')" >> $GITHUB_ENV
-          echo "WIN_HASH=$(sha256sum dist/passpix-windows/passpix.exe 2>/dev/null | awk '{print $1}' || echo 'N/A')" >> $GITHUB_ENV
+          echo "LINUX_HASH=$(sha256sum dist/passpix-linux | awk '{print $1}')" >> $GITHUB_ENV
+          echo "WIN_HASH=$(sha256sum dist/passpix.exe | awk '{print $1}')" >> $GITHUB_ENV
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
@@ -88,5 +83,5 @@ jobs:
             | Linux | `passpix` | `${{ env.LINUX_HASH }}` |
             | Windows | `passpix.exe` | `${{ env.WIN_HASH }}` |
           files: |
-            dist/passpix-linux/passpix
-            dist/passpix-windows/passpix.exe
+            dist/passpix-linux
+            dist/passpix.exe
