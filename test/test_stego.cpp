@@ -1,5 +1,6 @@
 #include "catch_amalgamated.hpp"
 #include "image_utils.h"
+#include "lodepng.h"
 #include <filesystem>
 #include <fstream>
 
