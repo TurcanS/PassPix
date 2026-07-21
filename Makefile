@@ -74,18 +74,14 @@ all: $(TARGET)
 
 # Link executable
 $(TARGET): $(OBJECTS)
-	@echo "Linking $@..."
+	@echo Linking $@
 	$(CXX) $(CXXFLAGS) $(OBJECTS) -o $@ $(LDFLAGS) $(LIBS)
-	@echo "Build complete: $(TARGET)"
+	@echo Build complete: $(TARGET)
 
 # Compile source files
 $(OBJ_DIR)/%.o: %.cpp
-	@echo "Compiling $<..."
-ifeq ($(PLATFORM),Windows)
-	@$(MKDIR) "$(subst /,\,$(dir $@))" 2>nul || echo >nul
-else
-	@$(MKDIR) $(dir $@)
-endif
+	@echo Compiling $<
+	@$(MKDIR) $(dir $@) 2>/dev/null || true
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 
 # Clean build artifacts
