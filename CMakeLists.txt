@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 project(passpix)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 
 # Try to find OpenSSL normally first
 find_package(OpenSSL QUIET)

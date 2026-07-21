@@ -1,4 +1,4 @@
-# Makefile for Password_To_Image
+# Makefile for PassPix
 # Optimized for MinGW make on Windows and native builds on Linux
 
 # Compiler and tools
@@ -41,7 +41,7 @@ OBJECTS = $(SOURCES:%.cpp=$(OBJ_DIR)/%.o)
 INCLUDES = -I. -IInclude -Isrc
 
 # Optimization and warning flags
-CXXFLAGS = -std=c++11 -Wall -Wextra -pedantic
+CXXFLAGS = -std=c++17 -Wall -Wextra -pedantic
 OPTFLAGS = -O3 -march=native -mtune=native -flto
 LDFLAGS = -flto
 
@@ -111,7 +111,7 @@ endif
 
 # Help target
 help:
-	@echo "Password_To_Image Makefile"
+	@echo "PassPix Makefile"
 	@echo ""
 	@echo "Usage:"
 	@echo "  make              - Build the project (optimized)"
