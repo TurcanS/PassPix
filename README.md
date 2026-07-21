@@ -33,7 +33,7 @@ To recover the password, you provide the same master passphrase — the correct 
 
 ### Dependencies
 
-- **C++ compiler** — g++ with C++11 support or newer
+- **C++ compiler** — g++ with C++17 support or newer
 - **OpenSSL** — 1.1.0 or newer (3.0+ recommended)
   - Linux: `libssl-dev`, `libcrypto-dev`
   - Windows (MinGW): OpenSSL libraries for MinGW

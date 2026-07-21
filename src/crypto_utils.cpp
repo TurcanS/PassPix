@@ -35,7 +35,7 @@ std::string pbkdf2(const std::string& password, const std::string& salt, size_t 
             iterations,
             EVP_sha256(),
             keyLength, key.data()) != 1) {
-        std::cerr << "Error generating key using PBKDF2" << std::endl;
+        std::cerr << "Error: PBKDF2 key derivation failed" << std::endl;
         return "";
     }
     

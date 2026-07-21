@@ -3,6 +3,16 @@
 #include <cmath>
 #include <random>
 
+namespace {
+    constexpr float NOISE_INTENSITY = 10.0f;
+    constexpr int MIN_SHAPES = 10;
+    constexpr int MAX_SHAPES = 25;
+    constexpr int MIN_RADIUS = 30;
+    constexpr int MAX_RADIUS = 150;
+    constexpr float MIN_OPACITY = 0.1f;
+    constexpr float MAX_OPACITY = 0.3f;
+}
+
 void generateGradient(std::vector<unsigned char>& image, unsigned width, unsigned height,
                       const std::vector<unsigned char>& color1,
                       const std::vector<unsigned char>& color2) {
@@ -50,9 +60,9 @@ void addShapes(std::vector<unsigned char>& image, unsigned width, unsigned heigh
                int numShapes, std::mt19937& rng) {
     std::uniform_int_distribution<int> xDist(0, static_cast<int>(width) - 1);
     std::uniform_int_distribution<int> yDist(0, static_cast<int>(height) - 1);
-    std::uniform_int_distribution<int> radiusDist(30, 150);
+    std::uniform_int_distribution<int> radiusDist(MIN_RADIUS, MAX_RADIUS);
     std::uniform_int_distribution<int> colorDist(0, 255);
-    std::uniform_real_distribution<float> opacityDist(0.1f, 0.3f);
+    std::uniform_real_distribution<float> opacityDist(MIN_OPACITY, MAX_OPACITY);
 
     for (int s = 0; s < numShapes; s++) {
         const int centerX = xDist(rng);

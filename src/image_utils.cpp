@@ -8,6 +8,11 @@
 #include <filesystem>
 #include <algorithm>
 
+namespace {
+    constexpr size_t FILENAME_RANDOM_LENGTH = 10;
+    constexpr size_t SALT_LENGTH = 16;
+}
+
 void encryptPassword(const std::string& masterPassphrase, const std::string& password) {
     const unsigned width = IMAGE_WIDTH;
     const unsigned height = IMAGE_HEIGHT;
@@ -41,7 +46,7 @@ void encryptPassword(const std::string& masterPassphrase, const std::string& pas
     addNaturalNoise(image, width, height, 10.0f);
 
     // Encrypt password
-    std::string salt = generateRandomString(16);
+    std::string salt = generateRandomString(SALT_LENGTH);
     std::string key = pbkdf2(masterPassphrase, salt, AES_KEY_SIZE, PBKDF2_ITERATIONS);
 
     std::vector<unsigned char> iv(AES_BLOCK_SIZE);
@@ -60,7 +65,7 @@ void encryptPassword(const std::string& masterPassphrase, const std::string& pas
 
     embedPayload(image, width, height, payload, key);
 
-    std::string filename = "enc_" + generateRandomString(10) + ".png";
+    std::string filename = "enc_" + generateRandomString(FILENAME_RANDOM_LENGTH) + ".png";
     unsigned error = lodepng::encode(filename, image, width, height);
     if (error) {
         std::cout << "Error encoding image: " << lodepng_error_text(error) << std::endl;
@@ -81,8 +86,8 @@ std::string decryptPassword(const std::string& masterPassphrase, const std::stri
 
     // Peek at salt from known positions (no key needed — fixed offsets)
     std::string salt;
-    salt.reserve(16);
-    for (size_t i = 0; i < 16; i++) {
+    salt.reserve(SALT_LENGTH);
+    for (size_t i = 0; i < SALT_LENGTH; i++) {
         unsigned char s = image[SALT_OFFSET + i];
         salt.push_back(static_cast<char>(s));
     }
