@@ -71,3 +71,27 @@ else()
     target_include_directories(passpix PRIVATE ${OPENSSL_INCLUDE_DIR})
     target_link_libraries(passpix PRIVATE ${OPENSSL_SSL_LIBRARY} ${OPENSSL_CRYPTO_LIBRARY})
 endif()
+
+# Testing
+enable_testing()
+
+set(TEST_SOURCES
+    test/catch_amalgamated.cpp
+    test/test_crypto.cpp
+    test/test_stego.cpp
+    src/crypto_utils.cpp
+    src/image_utils.cpp
+    Include/lodepng.cpp
+)
+
+add_executable(test_runner ${TEST_SOURCES})
+target_include_directories(test_runner PRIVATE src Include)
+
+if(TARGET OpenSSL::SSL AND TARGET OpenSSL::Crypto)
+    target_link_libraries(test_runner OpenSSL::SSL OpenSSL::Crypto)
+else()
+    target_include_directories(test_runner PRIVATE ${OPENSSL_INCLUDE_DIR})
+    target_link_libraries(test_runner PRIVATE ${OPENSSL_SSL_LIBRARY} ${OPENSSL_CRYPTO_LIBRARY})
+endif()
+
+add_test(NAME passpix_tests COMMAND test_runner WORKING_DIRECTORY ${CMAKE_BINARY_DIR})

@@ -42,3 +42,8 @@ _codeql_detected_source_root
 
 # Documentation (local only)
 docs/
+
+# Test artifacts
+test/test_runner
+test/*.o
+*.png

@@ -124,5 +124,11 @@ help:
 	@echo "Platform: $(PLATFORM)"
 	@echo "Compiler: $(CXX)"
 
+# Test target
+.PHONY: test
+test: $(TARGET)
+	@echo "Running tests..."
+	@$(MAKE) -C test test
+
 # Dependencies
 -include $(OBJECTS:.o=.d)
