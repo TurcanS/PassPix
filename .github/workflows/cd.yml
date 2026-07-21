@@ -54,19 +54,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download artifacts
+      - name: Download Linux artifact
         uses: actions/download-artifact@v4
         with:
-          pattern: passpix-*
-          path: release/
+          name: passpix-linux
+          path: release/linux/
+
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: passpix-windows
+          path: release/windows/
 
       - name: Organize and hash
         run: |
           mkdir -p dist
-          # Linux binary
-          cp release/passpix-linux/passpix dist/passpix-linux
-          # Windows binary - rename to .exe
-          cp release/passpix-windows/passpix dist/passpix.exe
+          cp release/linux/passpix dist/passpix-linux
+          cp release/windows/passpix dist/passpix.exe
           ls -la dist/
           echo "LINUX_HASH=$(sha256sum dist/passpix-linux | awk '{print $1}')" >> $GITHUB_ENV
           echo "WIN_HASH=$(sha256sum dist/passpix.exe | awk '{print $1}')" >> $GITHUB_ENV
