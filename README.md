@@ -13,7 +13,7 @@ PassPix generates a unique abstract gradient image, encrypts your password with 
 ```
 You enter a master passphrase + password to store
        ↓
-    PassPix generates a random 720×720 gradient image
+    PassPix generates a random 1920×1080 gradient image
     with soft shapes and natural noise
        ↓
     Your password is encrypted with AES-256-CBC
@@ -70,6 +70,16 @@ cmake .. && make
 # Output files are named enc_<random>.png
 ```
 
+### Testing
+
+```bash
+# Run all tests (unit + integration + smoke)
+make test
+
+# Or with CMake
+cd build && cmake .. && make && ctest
+```
+
 ---
 
 ## Technical Details
@@ -81,7 +91,7 @@ cmake .. && make
 | **Integrity** | HMAC-SHA256 (constant-time verification) |
 | **Steganography** | Pseudorandom byte embedding with 2× redundancy + frequency recovery |
 | **Image format** | PNG via [LodePNG](https://lodev.org/lodepng/) |
-| **Image size** | 720×720 RGBA (8-bit per channel) |
+| **Image size** | 1920×1080 RGBA (8-bit per channel) |
 
 ### Image embedding layout
 
@@ -94,14 +104,21 @@ Metadata (salt, IV, password hash, HMAC) is stored at multiple redundant locatio
 ```
 PassPix/
 ├── src/
-│   ├── main.cpp           # CLI menu and user flow
-│   ├── crypto_utils.h/.cpp # PBKDF2, AES-256-CBC, HMAC, SHA-256
-│   └── image_utils.h/.cpp  # Image generation, steganographic embed/extract
+│   ├── main.cpp            # CLI menu and user flow
+│   ├── crypto_utils.h/.cpp  # PBKDF2, AES-256-CBC, HMAC, SHA-256
+│   ├── image_gen.h/.cpp     # Gradient, shapes, noise generation
+│   ├── stego.h/.cpp         # Steganographic embed/extract with redundancy
+│   └── image_utils.h/.cpp   # Legacy compatibility wrapper
 ├── Include/
-│   ├── lodepng.cpp         # PNG encoding/decoding (bundled)
+│   ├── lodepng.cpp          # PNG encoding/decoding (bundled)
 │   └── lodepng.h
-├── Makefile                # Optimized make build
-├── CMakeLists.txt          # CMake build
+├── test/
+│   ├── test_crypto.cpp      # Unit tests for crypto functions
+│   ├── test_stego.cpp       # Integration tests for encrypt/decrypt roundtrip
+│   └── smoke_test.sh        # CLI smoke test
+├── Makefile                 # Make build
+├── CMakeLists.txt           # CMake build
+├── LICENSE                  # MIT license
 └── README.md
 ```
 
@@ -117,4 +134,4 @@ PassPix/
 
 ## License
 
-Apache 2.0 — see [LICENSE](LICENSE).
+MIT — see [LICENSE](LICENSE).
