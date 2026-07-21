@@ -31,7 +31,7 @@ void embedPayload(std::vector<unsigned char>& image, unsigned width, unsigned he
     }
 
     // Store IV at three locations
-    for (int i = 0; i < AES_BLOCK_SIZE; i++) {
+    for (int i = 0; i < NONCE_SIZE; i++) {
         const unsigned char ivByte = payload.iv[i];
         image[IV_OFFSET + i] = ivByte;
         image[static_cast<size_t>(width) * 4 - IV_OFFSET - i] = ivByte;
@@ -68,16 +68,7 @@ void embedPayload(std::vector<unsigned char>& image, unsigned width, unsigned he
         }
     }
 
-    // Store HMAC at three locations
-    const size_t hmacSize = std::min(payload.hmac.size(), static_cast<size_t>(HMAC_SIZE));
-    for (size_t i = 0; i < hmacSize; i++) {
-        const unsigned char hmacByte = payload.hmac[i];
-        image[imageSize - HMAC_REAR_OFFSET - i] = hmacByte;
-        image[imageSize - HMAC_REAR_OFFSET - HMAC_SIZE - i] = hmacByte;
-        image[HMAC_OFFSET + i] = hmacByte;
-    }
 }
-
 EncryptedPayload extractPayload(const std::vector<unsigned char>& image, unsigned width,
                                  unsigned height, const std::string& key) {
     const unsigned totalPixels = width * height;
@@ -117,8 +108,8 @@ EncryptedPayload extractPayload(const std::vector<unsigned char>& image, unsigne
     }
 
     // Extract IV with triple redundancy
-    result.iv.resize(AES_BLOCK_SIZE);
-    for (int i = 0; i < AES_BLOCK_SIZE; i++) {
+    result.iv.resize(NONCE_SIZE);
+    for (int i = 0; i < NONCE_SIZE; i++) {
         unsigned char iv1 = image[IV_OFFSET + i];
         unsigned char iv2 = image[static_cast<size_t>(width) * 4 - IV_OFFSET - i];
         unsigned char iv3 = image[(static_cast<size_t>(height) / 2 * width + width / 2) * 4 + i];
@@ -165,11 +156,7 @@ EncryptedPayload extractPayload(const std::vector<unsigned char>& image, unsigne
         result.encryptedData[i] = mostCommon;
     }
 
-    // Extract HMAC from 3 locations
-    result.hmac.resize(HMAC_SIZE);
-    for (int i = 0; i < HMAC_SIZE; i++) {
-        result.hmac[i] = image[imageSize - HMAC_REAR_OFFSET - i];
-    }
+
 
     // Extract stored password hash
     result.passwordHash.reserve(32);
