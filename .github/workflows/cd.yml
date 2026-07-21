@@ -69,8 +69,10 @@ jobs:
       - name: Organize and hash
         run: |
           mkdir -p dist
+          ls -R release/
           cp release/linux/passpix dist/passpix-linux
-          cp release/windows/passpix dist/passpix.exe
+          WINFILE=$(find release/windows -type f -not -name "*.md" | head -1)
+          cp "$WINFILE" dist/passpix.exe
           ls -la dist/
           echo "LINUX_HASH=$(sha256sum dist/passpix-linux | awk '{print $1}')" >> $GITHUB_ENV
           echo "WIN_HASH=$(sha256sum dist/passpix.exe | awk '{print $1}')" >> $GITHUB_ENV
