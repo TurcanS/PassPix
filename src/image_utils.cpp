@@ -11,7 +11,6 @@
 
 using namespace std;
 
-// Image dimensions
 const unsigned IMAGE_WIDTH = 1920;
 const unsigned IMAGE_HEIGHT = 1080;
 
