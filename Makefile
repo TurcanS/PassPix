@@ -31,6 +31,8 @@ OBJ_DIR = $(BUILD_DIR)/obj
 # Source files
 SOURCES = src/main.cpp \
           src/crypto_utils.cpp \
+          src/image_gen.cpp \
+          src/stego.cpp \
           src/image_utils.cpp \
           Include/lodepng.cpp
 
