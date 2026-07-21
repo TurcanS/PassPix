@@ -9,7 +9,7 @@
 #include <map>
 #include <cmath>
 
-using namespace std;
+
 
 const unsigned IMAGE_WIDTH = 1920;
 const unsigned IMAGE_HEIGHT = 1080;
@@ -23,8 +23,8 @@ const size_t HMAC_OFFSET = 400;
 const size_t HMAC_REAR_OFFSET = 40; // Bytes from end of image for redundant HMAC
 
 // Helper function to generate a smooth gradient
-void generateGradient(vector<unsigned char>& image, unsigned width, unsigned height, 
-                     const vector<unsigned char>& color1, const vector<unsigned char>& color2) {
+void generateGradient(std::vector<unsigned char>& image, unsigned width, unsigned height, 
+                     const std::vector<unsigned char>& color1, const std::vector<unsigned char>& color2) {
     // Pre-calculate width factor to avoid repeated division
     const float widthInv = 1.0f / width;
     const float heightInv = 1.0f / height;
@@ -49,10 +49,10 @@ void generateGradient(vector<unsigned char>& image, unsigned width, unsigned hei
 }
 
 // Helper function to add some smooth noise to make it look natural
-void addNaturalNoise(vector<unsigned char>& image, unsigned width, unsigned height, float intensity) {
-    random_device rd;
-    mt19937 rng(rd());
-    normal_distribution<float> dist(0.0f, intensity);
+void addNaturalNoise(std::vector<unsigned char>& image, unsigned width, unsigned height, float intensity) {
+    std::random_device rd;
+    std::mt19937 rng(rd());
+    std::normal_distribution<float> dist(0.0f, intensity);
     
     const size_t totalPixels = width * height;
     for (size_t pixel = 0; pixel < totalPixels; pixel++) {
@@ -66,19 +66,19 @@ void addNaturalNoise(vector<unsigned char>& image, unsigned width, unsigned heig
         int newValue2 = static_cast<int>(image[idx + 1]) + static_cast<int>(noise2);
         int newValue3 = static_cast<int>(image[idx + 2]) + static_cast<int>(noise3);
         
-        image[idx] = static_cast<unsigned char>(max(0, min(255, newValue1)));
-        image[idx + 1] = static_cast<unsigned char>(max(0, min(255, newValue2)));
-        image[idx + 2] = static_cast<unsigned char>(max(0, min(255, newValue3)));
+        image[idx] = static_cast<unsigned char>(std::max(0, std::min(255, newValue1)));
+        image[idx + 1] = static_cast<unsigned char>(std::max(0, std::min(255, newValue2)));
+        image[idx + 2] = static_cast<unsigned char>(std::max(0, std::min(255, newValue3)));
     }
 }
 
 // Helper function to add simple shapes for natural look
-void addShapes(vector<unsigned char>& image, unsigned width, unsigned height, int numShapes, mt19937& rng) {
-    uniform_int_distribution<int> xDist(0, width - 1);
-    uniform_int_distribution<int> yDist(0, height - 1);
-    uniform_int_distribution<int> radiusDist(30, 150);
-    uniform_int_distribution<int> colorDist(0, 255);
-    uniform_real_distribution<float> opacityDist(0.1f, 0.3f);
+void addShapes(std::vector<unsigned char>& image, unsigned width, unsigned height, int numShapes, std::mt19937& rng) {
+    std::uniform_int_distribution<int> xDist(0, width - 1);
+    std::uniform_int_distribution<int> yDist(0, height - 1);
+    std::uniform_int_distribution<int> radiusDist(30, 150);
+    std::uniform_int_distribution<int> colorDist(0, 255);
+    std::uniform_real_distribution<float> opacityDist(0.1f, 0.3f);
     
     for (int s = 0; s < numShapes; s++) {
         const int centerX = xDist(rng);
@@ -91,10 +91,10 @@ void addShapes(vector<unsigned char>& image, unsigned width, unsigned height, in
         };
         const float opacity = opacityDist(rng);
         
-        const int minY = max(0, centerY - radius);
-        const int maxY = min(static_cast<int>(height), centerY + radius);
-        const int minX = max(0, centerX - radius);
-        const int maxX = min(static_cast<int>(width), centerX + radius);
+        const int minY = std::max(0, centerY - radius);
+        const int maxY = std::min(static_cast<int>(height), centerY + radius);
+        const int minX = std::max(0, centerX - radius);
+        const int maxX = std::min(static_cast<int>(width), centerX + radius);
         const float radiusSquared = static_cast<float>(radius * radius);
         
         for (int y = minY; y < maxY; y++) {
@@ -107,7 +107,7 @@ void addShapes(vector<unsigned char>& image, unsigned width, unsigned height, in
                 const float distanceSquared = static_cast<float>(dx * dx + dySquared);
                 
                 if (distanceSquared < radiusSquared) {
-                    const float distance = sqrt(distanceSquared);
+                    const float distance = std::sqrt(distanceSquared);
                     float factor = 1.0f - (distance / radius);
                     factor = factor * factor * opacity; // Squared factor times opacity
                     const float oneMinusFactor = 1.0f - factor;
@@ -126,28 +126,28 @@ void addShapes(vector<unsigned char>& image, unsigned width, unsigned height, in
     }
 }
 
-void encryptPassword(const string& masterPassphrase, const string& password) {
+void encryptPassword(const std::string& masterPassphrase, const std::string& password) {
     const unsigned width = IMAGE_WIDTH;
     const unsigned height = IMAGE_HEIGHT;
     const unsigned totalPixels = width * height;
     
-    vector<unsigned char> image;
+    std::vector<unsigned char> image;
     image.resize(totalPixels * 4);
     
     // Create a random seed for the image generation
-    random_device rd;
-    mt19937 rng(rd());
+    std::random_device rd;
+    std::mt19937 rng(rd());
     
     // Generate natural looking colors for the gradient
-    uniform_int_distribution<int> colorDist(0, 255);
-    vector<unsigned char> color1 = {
+    std::uniform_int_distribution<int> colorDist(0, 255);
+    std::vector<unsigned char> color1 = {
         static_cast<unsigned char>(colorDist(rng)),
         static_cast<unsigned char>(colorDist(rng)),
         static_cast<unsigned char>(colorDist(rng)),
         static_cast<unsigned char>(colorDist(rng))
     };
     
-    vector<unsigned char> color2 = {
+    std::vector<unsigned char> color2 = {
         static_cast<unsigned char>(colorDist(rng)),
         static_cast<unsigned char>(colorDist(rng)),
         static_cast<unsigned char>(colorDist(rng)),
@@ -158,7 +158,7 @@ void encryptPassword(const string& masterPassphrase, const string& password) {
     generateGradient(image, width, height, color1, color2);
     
     // Add some shapes to make it look more like a photograph
-    uniform_int_distribution<int> numShapesDist(10, 25);
+    std::uniform_int_distribution<int> numShapesDist(10, 25);
     int numShapes = numShapesDist(rng);
     addShapes(image, width, height, numShapes, rng);
     
@@ -166,15 +166,15 @@ void encryptPassword(const string& masterPassphrase, const string& password) {
     addNaturalNoise(image, width, height, 10.0f);
     
     // Continue with encryption as before
-    string salt = generateRandomString(16);
-    string key = pbkdf2(masterPassphrase, salt, AES_KEY_SIZE, PBKDF2_ITERATIONS);
+    std::string salt = generateRandomString(16);
+    std::string key = pbkdf2(masterPassphrase, salt, AES_KEY_SIZE, PBKDF2_ITERATIONS);
     
-    vector<unsigned char> iv(AES_BLOCK_SIZE);
+    std::vector<unsigned char> iv(AES_BLOCK_SIZE);
     RAND_bytes(iv.data(), AES_BLOCK_SIZE);
     
-    string passwordHash = sha256(password);
+    std::string passwordHash = sha256(password);
     
-    vector<unsigned char> encryptedData = aesEncrypt(password, key, iv);
+    std::vector<unsigned char> encryptedData = aesEncrypt(password, key, iv);
     
     // Store the encryption metadata in the image
     const unsigned encLen = encryptedData.size();
@@ -208,7 +208,7 @@ void encryptPassword(const string& masterPassphrase, const string& password) {
     }
     
     // Store password hash at two locations (combined loop)
-    const size_t hashLen = min(static_cast<size_t>(32), passwordHash.length());
+    const size_t hashLen = std::min(static_cast<size_t>(32), passwordHash.length());
     for (size_t i = 0; i < hashLen; i++) {
         const unsigned char hashChar = static_cast<unsigned char>(passwordHash[i]);
         image[HASH_OFFSET + i] = hashChar;
@@ -216,7 +216,7 @@ void encryptPassword(const string& masterPassphrase, const string& password) {
     }
     
     // Create indices for embedding encrypted data
-    vector<size_t> indices;
+    std::vector<size_t> indices;
     indices.reserve(totalPixels / 2);
     
     const size_t imageSize = totalPixels * 4;
@@ -225,8 +225,8 @@ void encryptPassword(const string& masterPassphrase, const string& password) {
     }
     
     unsigned seed = deriveSeedFromKey(key, salt);
-    mt19937 g(seed);
-    shuffle(indices.begin(), indices.end(), g);
+    std::mt19937 g(seed);
+    std::shuffle(indices.begin(), indices.end(), g);
     
     // Embed encrypted data with redundancy (combined loop)
     const size_t indicesThird = indices.size() / 3;
@@ -240,10 +240,10 @@ void encryptPassword(const string& masterPassphrase, const string& password) {
         }
     }
     
-    vector<unsigned char> hmac = generateHMAC(encryptedData, key);
+    std::vector<unsigned char> hmac = generateHMAC(encryptedData, key);
     
     // Store HMAC at three locations (combined loop)
-    const size_t hmacSize = min(hmac.size(), static_cast<size_t>(HMAC_SIZE));
+    const size_t hmacSize = std::min(hmac.size(), static_cast<size_t>(HMAC_SIZE));
     for (size_t i = 0; i < hmacSize; i++) {
         const unsigned char hmacByte = hmac[i];
         image[imageSize - HMAC_REAR_OFFSET - i] = hmacByte;
@@ -251,23 +251,23 @@ void encryptPassword(const string& masterPassphrase, const string& password) {
         image[HMAC_OFFSET + i] = hmacByte;
     }
     
-    string filename = "enc_" + generateRandomString(10) + ".png";
+    std::string filename = "enc_" + generateRandomString(10) + ".png";
     
     unsigned error = lodepng::encode(filename, image, width, height);
     if (error) {
-        cout << "Error encoding image: " << lodepng_error_text(error) << endl;
+        std::cout << "Error encoding image: " << lodepng_error_text(error) << std::endl;
     } else {
-        cout << "Password encrypted to file: " << filename << endl;
+        std::cout << "Password encrypted to file: " << filename << std::endl;
     }
 }
 
-string decryptPassword(const string& masterPassphrase, const string& filename) {
-    vector<unsigned char> image;
+std::string decryptPassword(const std::string& masterPassphrase, const std::string& filename) {
+    std::vector<unsigned char> image;
     unsigned width, height;
     
     unsigned error = lodepng::decode(image, width, height, filename);
     if (error) {
-        cout << "Error decoding image: " << lodepng_error_text(error) << endl;
+        std::cout << "Error decoding image: " << lodepng_error_text(error) << std::endl;
         return "";
     }
     
@@ -289,22 +289,22 @@ string decryptPassword(const string& masterPassphrase, const string& filename) {
     } else if (encLen2 == encLen3) {
         encLen = encLen2;
     } else {
-        vector<unsigned> lens = {encLen1, encLen2, encLen3};
-        sort(lens.begin(), lens.end());
+        std::vector<unsigned> lens = {encLen1, encLen2, encLen3};
+        std::sort(lens.begin(), lens.end());
         encLen = lens[1];
         
         if (encLen > 10000) {
-            encLen = min({encLen1, encLen2, encLen3});
+            encLen = std::min({encLen1, encLen2, encLen3});
             if (encLen > 10000) encLen = 1000;
         }
     }
     
     if (encLen1 != encLen2 || encLen2 != encLen3) {
-        cout << "Warning: Size data was corrupted but recovered using redundancy." << endl;
+        std::cout << "Warning: Size data was corrupted but recovered using redundancy." << std::endl;
     }
     
     // Extract salt from two locations with error recovery (combined loop)
-    string salt;
+    std::string salt;
     salt.reserve(16);
     bool saltCorrupted = false;
     
@@ -321,11 +321,11 @@ string decryptPassword(const string& masterPassphrase, const string& filename) {
     }
     
     if (saltCorrupted) {
-        cout << "Warning: Salt was corrupted but attempted recovery." << endl;
+        std::cout << "Warning: Salt was corrupted but attempted recovery." << std::endl;
     }
     
     // Extract IV from three locations with error recovery (combined loop)
-    vector<unsigned char> iv(AES_BLOCK_SIZE);
+    std::vector<unsigned char> iv(AES_BLOCK_SIZE);
     bool ivCorrupted = false;
     
     for (int i = 0; i < AES_BLOCK_SIZE; i++) {
@@ -344,11 +344,11 @@ string decryptPassword(const string& masterPassphrase, const string& filename) {
     }
     
     if (ivCorrupted) {
-        cout << "Warning: IV was corrupted but repaired using redundant data." << endl;
+        std::cout << "Warning: IV was corrupted but repaired using redundant data." << std::endl;
     }
     
     // Create indices for extracting encrypted data (optimized)
-    vector<size_t> indices;
+    std::vector<size_t> indices;
     indices.reserve(totalPixels / 2);
     
     for (size_t idx = DATA_EMBEDDING_START; idx < imageSize - METADATA_BOUNDARY; idx += 4) {
@@ -356,15 +356,15 @@ string decryptPassword(const string& masterPassphrase, const string& filename) {
     }
     
     // Use PBKDF2 with master passphrase and salt for key derivation
-    string key = pbkdf2(masterPassphrase, salt, AES_KEY_SIZE, PBKDF2_ITERATIONS);
+    std::string key = pbkdf2(masterPassphrase, salt, AES_KEY_SIZE, PBKDF2_ITERATIONS);
     
     // Derive the seed from key and salt instead of reading it from the image
     unsigned seed = deriveSeedFromKey(key, salt);
-    mt19937 g(seed);
-    shuffle(indices.begin(), indices.end(), g);
+    std::mt19937 g(seed);
+    std::shuffle(indices.begin(), indices.end(), g);
     
     // Extract encrypted data with frequency analysis (optimized)
-    vector<map<unsigned char, int>> byteFrequencies(encLen);
+    std::vector<std::map<unsigned char, int>> byteFrequencies(encLen);
     const size_t indicesThird = indices.size() / 3;
     
     for (size_t i = 0; i < encLen && i < indices.size(); i++) {
@@ -375,7 +375,7 @@ string decryptPassword(const string& masterPassphrase, const string& filename) {
         }
     }
     
-    vector<unsigned char> encryptedData(encLen);
+    std::vector<unsigned char> encryptedData(encLen);
     for (size_t i = 0; i < encLen; i++) {
         unsigned char mostCommon = 0;
         int maxCount = 0;
@@ -391,7 +391,7 @@ string decryptPassword(const string& masterPassphrase, const string& filename) {
     }
     
     // Extract stored HMAC from multiple locations (combined into arrays)
-    vector<unsigned char> storedHmac1(HMAC_SIZE), storedHmac2(HMAC_SIZE), storedHmac3(HMAC_SIZE);
+    std::vector<unsigned char> storedHmac1(HMAC_SIZE), storedHmac2(HMAC_SIZE), storedHmac3(HMAC_SIZE);
     for (int i = 0; i < HMAC_SIZE; i++) {
         storedHmac1[i] = image[imageSize - HMAC_REAR_OFFSET - i];
         storedHmac2[i] = image[imageSize - HMAC_REAR_OFFSET - HMAC_SIZE - i];
@@ -405,21 +405,21 @@ string decryptPassword(const string& masterPassphrase, const string& filename) {
         verifyHMAC(encryptedData, storedHmac3, key);
     
     if (!hmacVerified) {
-        cout << "Warning: HMAC verification failed. Data integrity cannot be guaranteed." << endl;
+        std::cout << "Warning: HMAC verification failed. Data integrity cannot be guaranteed." << std::endl;
     } else {
-        cout << "HMAC verification successful. Data integrity confirmed." << endl;
+        std::cout << "HMAC verification successful. Data integrity confirmed." << std::endl;
     }
     
     try {
-        string password = aesDecrypt(encryptedData, key, iv);
+        std::string password = aesDecrypt(encryptedData, key, iv);
         
         if (!password.empty()) {
-            string passwordHash = sha256(password);
+            std::string passwordHash = sha256(password);
             int validHashes = 0;
             int totalChecks = 0;
             
             // Verify password hash (combined loop)
-            const size_t hashLen = min(static_cast<size_t>(32), passwordHash.length());
+            const size_t hashLen = std::min(static_cast<size_t>(32), passwordHash.length());
             for (size_t i = 0; i < hashLen; i++) {
                 totalChecks += 2;
                 
@@ -433,29 +433,29 @@ string decryptPassword(const string& masterPassphrase, const string& filename) {
             }
             
             float hashValidityPercentage = (float)validHashes / totalChecks * 100.0f;
-            cout << "Password hash verification: " << hashValidityPercentage << "% valid" << endl;
+            std::cout << "Password hash verification: " << hashValidityPercentage << "% valid" << std::endl;
             
             if (hashValidityPercentage < 30.0f) {
-                cout << "Warning: Password verification failed. The data may be corrupted." << endl;
+                std::cout << "Warning: Password verification failed. The data may be corrupted." << std::endl;
             }
             
             return password;
         }
         return password;
     } catch (...) {
-        cout << "Error: Exception during decryption process." << endl;
+        std::cout << "Error: Exception during decryption process." << std::endl;
         return "";
     }
 }
 
-vector<string> listEncFiles() {
-    vector<string> files;
+std::vector<std::string> listEncFiles() {
+    std::vector<std::string> files;
     DIR* dir;
     struct dirent* ent;
     
     if ((dir = opendir(".")) != nullptr) {
         while ((ent = readdir(dir)) != nullptr) {
-            string filename = ent->d_name;
+            std::string filename = ent->d_name;
             if (filename.length() > 4 && 
                 filename.substr(0, 4) == "enc_" &&
                 filename.substr(filename.length() - 4) == ".png") {

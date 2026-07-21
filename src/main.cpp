@@ -5,51 +5,51 @@
 #include <string>
 #include <limits>
 
-using namespace std;
+
 
 void showMenu();
 
 int main() {
-    cout << "PassPix" << endl;
-    cout << string(55, '=') << endl;
+    std::cout << "PassPix" << std::endl;
+    std::cout << std::string(55, '=') << std::endl;
     
     while (true) {
         showMenu();
         
         int choice;
-        cin >> choice;
+        std::cin >> choice;
         
-        if (cin.fail()) {
-            cin.clear();
-            cin.ignore(numeric_limits<streamsize>::max(), '\n');
-            cout << "Invalid input. Please enter a number." << endl;
+        if (std::cin.fail()) {
+            std::cin.clear();
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            std::cout << "Invalid input. Please enter a number." << std::endl;
             continue;
         }
-        cin.ignore();
+        std::cin.ignore();
         
         if (choice == 1) {
-            string masterPassphrase, masterConfirm, password;
+            std::string masterPassphrase, masterConfirm, password;
             
-            cout << "Enter master passphrase: ";
-            getline(cin, masterPassphrase);
-            cout << "Confirm master passphrase: ";
-            getline(cin, masterConfirm);
+            std::cout << "Enter master passphrase: ";
+            getline(std::cin, masterPassphrase);
+            std::cout << "Confirm master passphrase: ";
+            getline(std::cin, masterConfirm);
             
             if (masterPassphrase != masterConfirm) {
-                cout << "Passphrases do not match. Aborting." << endl;
+                std::cout << "Passphrases do not match. Aborting." << std::endl;
                 continue;
             }
             
             if (masterPassphrase.empty()) {
-                cout << "Master passphrase cannot be empty. Aborting." << endl;
+                std::cout << "Master passphrase cannot be empty. Aborting." << std::endl;
                 continue;
             }
             
-            cout << "Enter password to encrypt: ";
-            getline(cin, password);
+            std::cout << "Enter password to encrypt: ";
+            getline(std::cin, password);
             
             if (password.empty()) {
-                cout << "Password cannot be empty. Aborting." << endl;
+                std::cout << "Password cannot be empty. Aborting." << std::endl;
                 continue;
             }
             
@@ -58,46 +58,46 @@ int main() {
         } else if (choice == 2) {
             auto files = listEncFiles();
             if (files.empty()) {
-                cout << "No encrypted files found." << endl;
+                std::cout << "No encrypted files found." << std::endl;
                 continue;
             }
             
-            cout << "Select a file to decrypt:" << endl;
+            std::cout << "Select a file to decrypt:" << std::endl;
             for (size_t i = 0; i < files.size(); i++) {
-                cout << (i + 1) << ". " << files[i] << endl;
+                std::cout << (i + 1) << ". " << files[i] << std::endl;
             }
             
             size_t fileIndex;
-            cout << "Enter file number: ";
-            cin >> fileIndex;
+            std::cout << "Enter file number: ";
+            std::cin >> fileIndex;
 
-            if (cin.fail()) {
-                cin.clear();
-                cin.ignore(numeric_limits<streamsize>::max(), '\n');
-                cout << "Invalid input. Please enter a number." << endl;
+            if (std::cin.fail()) {
+                std::cin.clear();
+                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                std::cout << "Invalid input. Please enter a number." << std::endl;
                 continue;
             }
-            cin.ignore();
+            std::cin.ignore();
 
-            cout << "Enter master passphrase: ";
-            string masterPassphrase;
-            getline(cin, masterPassphrase);
+            std::cout << "Enter master passphrase: ";
+            std::string masterPassphrase;
+            getline(std::cin, masterPassphrase);
             
             if (fileIndex < 1 || fileIndex > files.size()) {
-                cout << "Invalid selection." << endl;
+                std::cout << "Invalid selection." << std::endl;
                 continue;
             }
             
-            string decrypted = decryptPassword(masterPassphrase, files[fileIndex - 1]);
+            std::string decrypted = decryptPassword(masterPassphrase, files[fileIndex - 1]);
             
             if (!decrypted.empty()) {
-                cout << "Decrypted password: " << decrypted << endl;
+                std::cout << "Decrypted password: " << decrypted << std::endl;
             }
             
         } else if (choice == 3) {
             break;
         } else {
-            cout << "Invalid choice." << endl;
+            std::cout << "Invalid choice." << std::endl;
         }
     }
     
@@ -105,9 +105,9 @@ int main() {
 }
 
 void showMenu() {
-    cout << "\n=== PassPix Menu ===" << endl;
-    cout << "1. Encrypt Password" << endl;
-    cout << "2. Decrypt Password" << endl;
-    cout << "3. Exit" << endl;
-    cout << "Enter your choice: ";
+    std::cout << "\n=== PassPix Menu ===" << std::endl;
+    std::cout << "1. Encrypt Password" << std::endl;
+    std::cout << "2. Decrypt Password" << std::endl;
+    std::cout << "3. Exit" << std::endl;
+    std::cout << "Enter your choice: ";
 }

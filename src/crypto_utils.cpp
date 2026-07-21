@@ -6,16 +6,16 @@
 #include <algorithm>
 #include <cstring>
 
-using namespace std;
 
-string generateRandomString(size_t length) {
-    const string chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+
+std::string generateRandomString(size_t length) {
+    const std::string chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
     
-    random_device rd;
-    mt19937 generator(rd());
-    uniform_int_distribution<> distribution(0, chars.size() - 1);
+    std::random_device rd;
+    std::mt19937 generator(rd());
+    std::uniform_int_distribution<> distribution(0, chars.size() - 1);
     
-    string result;
+    std::string result;
     result.reserve(length);
     
     for (size_t i = 0; i < length; ++i) {
@@ -25,8 +25,8 @@ string generateRandomString(size_t length) {
     return result;
 }
 
-string pbkdf2(const string& password, const string& salt, size_t keyLength, int iterations) {
-    vector<unsigned char> key(keyLength);
+std::string pbkdf2(const std::string& password, const std::string& salt, size_t keyLength, int iterations) {
+    std::vector<unsigned char> key(keyLength);
     
     // Use PKCS5_PBKDF2_HMAC with SHA-256
     if (PKCS5_PBKDF2_HMAC(
@@ -35,16 +35,16 @@ string pbkdf2(const string& password, const string& salt, size_t keyLength, int 
             iterations,
             EVP_sha256(),
             keyLength, key.data()) != 1) {
-        cerr << "Error generating key using PBKDF2" << endl;
+        std::cerr << "Error generating key using PBKDF2" << std::endl;
         return "";
     }
     
-    // Convert to string for our API
-    string result(reinterpret_cast<char*>(key.data()), keyLength);
+    // Convert to std::string for our API
+    std::string result(reinterpret_cast<char*>(key.data()), keyLength);
     return result;
 }
 
-string sha256(const string& data) {
+std::string sha256(const std::string& data) {
     unsigned char hash[SHA256_DIGEST_LENGTH];
     
     EVP_MD_CTX* context = EVP_MD_CTX_new();
@@ -56,19 +56,19 @@ string sha256(const string& data) {
     
     EVP_MD_CTX_free(context);
     
-    stringstream ss;
+    std::stringstream ss;
     for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
-        ss << hex << setw(2) << setfill('0') << static_cast<int>(hash[i]);
+        ss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(hash[i]);
     }
     return ss.str();
 }
 
-vector<unsigned char> aesEncrypt(const string& plaintext, const string& key, vector<unsigned char>& iv) {
+std::vector<unsigned char> aesEncrypt(const std::string& plaintext, const std::string& key, std::vector<unsigned char>& iv) {
     EVP_CIPHER_CTX *ctx;
     int len;
     int ciphertext_len;
     
-    vector<unsigned char> ciphertext(plaintext.length() + AES_BLOCK_SIZE);
+    std::vector<unsigned char> ciphertext(plaintext.length() + AES_BLOCK_SIZE);
     
     ctx = EVP_CIPHER_CTX_new();
     
@@ -94,9 +94,9 @@ vector<unsigned char> aesEncrypt(const string& plaintext, const string& key, vec
     return ciphertext;
 }
 
-string aesDecrypt(const vector<unsigned char>& ciphertext, const string& key, const vector<unsigned char>& iv) {
+std::string aesDecrypt(const std::vector<unsigned char>& ciphertext, const std::string& key, const std::vector<unsigned char>& iv) {
     if (ciphertext.empty()) {
-        cout << "Error: Empty ciphertext." << endl;
+        std::cout << "Error: Empty ciphertext." << std::endl;
         return "";
     }
     
@@ -104,18 +104,18 @@ string aesDecrypt(const vector<unsigned char>& ciphertext, const string& key, co
     int len;
     int plaintext_len;
     
-    vector<unsigned char> plaintext_buf(ciphertext.size() + AES_BLOCK_SIZE);
+    std::vector<unsigned char> plaintext_buf(ciphertext.size() + AES_BLOCK_SIZE);
     
     ctx = EVP_CIPHER_CTX_new();
     if (!ctx) {
-        cout << "Error: Failed to create cipher context." << endl;
+        std::cout << "Error: Failed to create cipher context." << std::endl;
         return "";
     }
     
     if (EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, 
                          reinterpret_cast<const unsigned char*>(key.c_str()), 
                          iv.data()) != 1) {
-        cout << "Error: Failed to initialize decryption." << endl;
+        std::cout << "Error: Failed to initialize decryption." << std::endl;
         EVP_CIPHER_CTX_free(ctx);
         return "";
     }
@@ -125,7 +125,7 @@ string aesDecrypt(const vector<unsigned char>& ciphertext, const string& key, co
     
     if (EVP_DecryptUpdate(ctx, plaintext_buf.data(), &len, 
                        ciphertext.data(), ciphertext.size()) != 1) {
-        cout << "Error: Failed during decryption update." << endl;
+        std::cout << "Error: Failed during decryption update." << std::endl;
         EVP_CIPHER_CTX_free(ctx);
         return "";
     }
@@ -137,7 +137,7 @@ string aesDecrypt(const vector<unsigned char>& ciphertext, const string& key, co
     EVP_CIPHER_CTX_free(ctx);
     
     if (finalResult <= 0) {
-        cout << "Error: Decryption failed, possibly due to corrupted data or incorrect key/IV." << endl;
+        std::cout << "Error: Decryption failed, possibly due to corrupted data or incorrect key/IV." << std::endl;
         return "";
     }
     
@@ -153,15 +153,15 @@ string aesDecrypt(const vector<unsigned char>& ciphertext, const string& key, co
     }
     
     if (!isPrintable) {
-        cout << "Warning: Decrypted data contains non-printable characters, which may indicate corruption." << endl;
+        std::cout << "Warning: Decrypted data contains non-printable characters, which may indicate corruption." << std::endl;
     }
     
     // The padding is automatically removed by EVP_DecryptFinal_ex, so we don't need to handle null bytes
-    return string(plaintext_buf.begin(), plaintext_buf.begin() + plaintext_len);
+    return std::string(plaintext_buf.begin(), plaintext_buf.begin() + plaintext_len);
 }
 
-vector<unsigned char> generateHMAC(const vector<unsigned char>& data, const string& key) {
-    vector<unsigned char> hmac(HMAC_SIZE);
+std::vector<unsigned char> generateHMAC(const std::vector<unsigned char>& data, const std::string& key) {
+    std::vector<unsigned char> hmac(HMAC_SIZE);
     unsigned int len = 0;
     
     // Use proper HMAC function instead of manual concatenation
@@ -174,16 +174,16 @@ vector<unsigned char> generateHMAC(const vector<unsigned char>& data, const stri
                                   &len);
     
     if (result == nullptr) {
-        cerr << "Error: HMAC generation failed" << endl;
-        return vector<unsigned char>(HMAC_SIZE, 0);
+        std::cerr << "Error: HMAC generation failed" << std::endl;
+        return std::vector<unsigned char>(HMAC_SIZE, 0);
     }
     
     hmac.resize(len);
     return hmac;
 }
 
-bool verifyHMAC(const vector<unsigned char>& data, const vector<unsigned char>& hmac, const string& key) {
-    vector<unsigned char> computedHmac = generateHMAC(data, key);
+bool verifyHMAC(const std::vector<unsigned char>& data, const std::vector<unsigned char>& hmac, const std::string& key) {
+    std::vector<unsigned char> computedHmac = generateHMAC(data, key);
     
     if (hmac.size() != computedHmac.size()) {
         return false;
@@ -193,38 +193,38 @@ bool verifyHMAC(const vector<unsigned char>& data, const vector<unsigned char>& 
     return CRYPTO_memcmp(hmac.data(), computedHmac.data(), hmac.size()) == 0;
 }
 
-unsigned deriveSeedFromKey(const string& key, const string& salt) {
+unsigned deriveSeedFromKey(const std::string& key, const std::string& salt) {
     // Use SHA-256 to create a hash of key and salt
     unsigned char hash[SHA256_DIGEST_LENGTH];
     
     EVP_MD_CTX* context = EVP_MD_CTX_new();
     if (context == nullptr) {
-        cerr << "Error: Failed to create EVP_MD_CTX" << endl;
+        std::cerr << "Error: Failed to create EVP_MD_CTX" << std::endl;
         return 0;
     }
     
     const EVP_MD* md = EVP_sha256();
     
     if (EVP_DigestInit_ex(context, md, nullptr) != 1) {
-        cerr << "Error: Failed to initialize digest" << endl;
+        std::cerr << "Error: Failed to initialize digest" << std::endl;
         EVP_MD_CTX_free(context);
         return 0;
     }
     
     if (EVP_DigestUpdate(context, key.data(), key.size()) != 1) {
-        cerr << "Error: Failed to update digest with key" << endl;
+        std::cerr << "Error: Failed to update digest with key" << std::endl;
         EVP_MD_CTX_free(context);
         return 0;
     }
     
     if (EVP_DigestUpdate(context, salt.data(), salt.size()) != 1) {
-        cerr << "Error: Failed to update digest with salt" << endl;
+        std::cerr << "Error: Failed to update digest with salt" << std::endl;
         EVP_MD_CTX_free(context);
         return 0;
     }
     
     if (EVP_DigestFinal_ex(context, hash, nullptr) != 1) {
-        cerr << "Error: Failed to finalize digest" << endl;
+        std::cerr << "Error: Failed to finalize digest" << std::endl;
         EVP_MD_CTX_free(context);
         return 0;
     }
