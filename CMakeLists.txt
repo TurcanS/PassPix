@@ -52,6 +52,14 @@ message(STATUS "OpenSSL include: ${OPENSSL_INCLUDE_DIR}")
 message(STATUS "OpenSSL crypto lib: ${OPENSSL_CRYPTO_LIBRARY}")
 message(STATUS "OpenSSL ssl lib: ${OPENSSL_SSL_LIBRARY}")
 
+find_package(PkgConfig QUIET)
+if(PkgConfig_FOUND)
+    pkg_check_modules(SODIUM libsodium)
+endif()
+if(NOT SODIUM_FOUND)
+    find_library(SODIUM_LIBRARY sodium)
+endif()
+
 # Add source files
 set(SOURCES
     src/main.cpp
@@ -92,10 +100,10 @@ add_executable(test_runner ${TEST_SOURCES})
 target_include_directories(test_runner PRIVATE src Include)
 
 if(TARGET OpenSSL::SSL AND TARGET OpenSSL::Crypto)
-    target_link_libraries(test_runner OpenSSL::SSL OpenSSL::Crypto)
+    target_link_libraries(test_runner OpenSSL::SSL OpenSSL::Crypto ${SODIUM_LIBRARIES} -lsodium)
 else()
     target_include_directories(test_runner PRIVATE ${OPENSSL_INCLUDE_DIR})
-    target_link_libraries(test_runner PRIVATE ${OPENSSL_SSL_LIBRARY} ${OPENSSL_CRYPTO_LIBRARY})
+    target_link_libraries(test_runner PRIVATE ${OPENSSL_SSL_LIBRARY} ${OPENSSL_CRYPTO_LIBRARY} ${SODIUM_LIBRARIES} -lsodium)
 endif()
 
 add_test(NAME passpix_tests COMMAND test_runner WORKING_DIRECTORY ${CMAKE_BINARY_DIR})

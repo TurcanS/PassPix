@@ -1,6 +1,6 @@
 CXX ?= g++
 CXXFLAGS = -std=c++17 -Wall -Wextra -pedantic -I../Include -I../src
-LIBS = -lssl -lcrypto -lpthread
+LIBS = -lssl -lcrypto -lsodium -lpthread
 
 TEST_SOURCES = test_crypto.cpp test_stego.cpp
 SRC_SOURCES = ../src/crypto_utils.cpp ../src/image_gen.cpp ../src/stego.cpp ../src/image_utils.cpp ../Include/lodepng.cpp

@@ -50,12 +50,12 @@ LDFLAGS = -flto
 # Platform-specific settings
 ifeq ($(PLATFORM),Windows)
     # Windows/MinGW specific settings
-    LIBS = -lssl -lcrypto -lws2_32 -lcrypt32
+    LIBS = -lssl -lcrypto -lsodium -lws2_32 -lcrypt32
     # Use static linking on Windows to avoid DLL dependencies
     LDFLAGS += -static
 else
     # Linux specific settings
-    LIBS = -lssl -lcrypto -lpthread
+    LIBS = -lssl -lcrypto -lsodium -lpthread
 endif
 
 # Debug build support
