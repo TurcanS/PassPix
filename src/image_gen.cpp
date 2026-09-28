@@ -4,9 +4,6 @@
 #include <random>
 
 namespace {
-    constexpr float NOISE_INTENSITY = 10.0f;
-    constexpr int MIN_SHAPES = 10;
-    constexpr int MAX_SHAPES = 25;
     constexpr int MIN_RADIUS = 30;
     constexpr int MAX_RADIUS = 150;
     constexpr float MIN_OPACITY = 0.1f;
@@ -29,10 +26,10 @@ void generateGradient(std::vector<unsigned char>& image, unsigned width, unsigne
             const float oneMinusBlend = 1.0f - blend;
 
             const size_t idx = rowOffset + static_cast<size_t>(x) * 4;
-            image[idx]     = static_cast<unsigned char>(static_cast<float>(color1[0]) * oneMinusBlend + static_cast<float>(color2[0]) * blend);
-            image[idx + 1] = static_cast<unsigned char>(static_cast<float>(color1[1]) * oneMinusBlend + static_cast<float>(color2[1]) * blend);
-            image[idx + 2] = static_cast<unsigned char>(static_cast<float>(color1[2]) * oneMinusBlend + static_cast<float>(color2[2]) * blend);
-            image[idx + 3] = static_cast<unsigned char>(static_cast<float>(color1[3]) * oneMinusBlend + static_cast<float>(color2[3]) * blend);
+            image[idx]     = static_cast<unsigned char>(static_cast<float>(color1[0]) * oneMinusBlend + static_cast<float>(color2[0]) * blend + 0.5f);
+            image[idx + 1] = static_cast<unsigned char>(static_cast<float>(color1[1]) * oneMinusBlend + static_cast<float>(color2[1]) * blend + 0.5f);
+            image[idx + 2] = static_cast<unsigned char>(static_cast<float>(color1[2]) * oneMinusBlend + static_cast<float>(color2[2]) * blend + 0.5f);
+            image[idx + 3] = static_cast<unsigned char>(static_cast<float>(color1[3]) * oneMinusBlend + static_cast<float>(color2[3]) * blend + 0.5f);
         }
     }
 }

@@ -2,8 +2,6 @@
 
 #include <string>
 #include <vector>
-#include <openssl/evp.h>
-#include <openssl/sha.h>
 
 const int KEY_SIZE = 32;
 const int NONCE_SIZE = 24;
@@ -19,6 +17,7 @@ std::string decrypt(const std::vector<unsigned char>& ciphertext, const std::str
 std::string generateRandomString(size_t length);
 
 void secureWipe(void* data, size_t size);
+void wipeString(std::string& s);
 void lockMem(void* data, size_t size);
 void unlockMem(void* data, size_t size);
 

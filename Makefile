@@ -34,6 +34,8 @@ SOURCES = src/main.cpp \
           src/image_gen.cpp \
           src/stego.cpp \
           src/image_utils.cpp \
+          src/terminal.cpp \
+          src/clipboard.cpp \
           Include/lodepng.cpp
 
 # Object files
@@ -44,8 +46,23 @@ INCLUDES = -I. -IInclude -Isrc
 
 # Optimization and warning flags
 CXXFLAGS = -std=c++17 -Wall -Wextra -pedantic -D_FORTIFY_SOURCE=2 -fstack-protector-strong
+DEPFLAGS = -MMD -MP
 OPTFLAGS = -O3 -march=native -mtune=native -flto
 LDFLAGS = -flto
+
+# Extra flags appended to every compile and link (used by CI)
+EXTRA_CXXFLAGS ?=
+
+# Treat warnings as errors
+ifdef WERROR
+    EXTRA_CXXFLAGS += -Werror
+endif
+
+# Address and undefined-behavior sanitizers (implies a debug build)
+ifdef SANITIZE
+    DEBUG = 1
+    EXTRA_CXXFLAGS += -fsanitize=address,undefined -fno-omit-frame-pointer
+endif
 
 # Portable build (overrides native arch for reproducible release binaries)
 ifdef PORTABLE
@@ -55,23 +72,27 @@ endif
 # Platform-specific settings
 ifeq ($(PLATFORM),Windows)
     # Windows/MinGW specific settings
-    LIBS = -lssl -lcrypto -lsodium -lws2_32 -lcrypt32
+    LIBS = -lsodium -ladvapi32
     # Use static linking on Windows to avoid DLL dependencies
     LDFLAGS += -static
 else
     # Linux specific settings
-    LIBS = -lssl -lcrypto -lsodium -lpthread
+    LIBS = -lsodium -lpthread
     LDFLAGS += -Wl,-z,relro -Wl,-z,now
 endif
 
 # Debug build support
 ifdef DEBUG
-    CXXFLAGS += -g -O0 -DDEBUG
+    CXXFLAGS := $(filter-out -D_FORTIFY_SOURCE=2,$(CXXFLAGS)) -g -O0 -DDEBUG
     OPTFLAGS =
     LDFLAGS =
 else
     CXXFLAGS += $(OPTFLAGS) -DNDEBUG
 endif
+
+CXXFLAGS += $(EXTRA_CXXFLAGS)
+
+export CXX EXTRA_CXXFLAGS
 
 # Build rules
 .PHONY: all clean rebuild install help
@@ -88,7 +109,7 @@ $(TARGET): $(OBJECTS)
 $(OBJ_DIR)/%.o: %.cpp
 	@echo Compiling $<
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
+	$(CXX) $(CXXFLAGS) $(DEPFLAGS) $(INCLUDES) -c $< -o $@
 
 # Clean build artifacts
 clean:
@@ -99,6 +120,7 @@ else
 	@$(RMDIR) $(BUILD_DIR) 2>/dev/null || true
 	@$(RM) $(TARGET) 2>/dev/null || true
 endif
+	-@$(MAKE) -s -C test clean
 	@echo "Clean complete"
 
 # Rebuild from scratch
@@ -120,8 +142,12 @@ help:
 	@echo "Usage:"
 	@echo "  make              - Build the project (optimized)"
 	@echo "  make DEBUG=1      - Build with debug symbols"
+	@echo "  make SANITIZE=1   - Debug build with address/UB sanitizers"
+	@echo "  make WERROR=1     - Treat compiler warnings as errors"
+	@echo "  make PORTABLE=1   - Build for generic x86-64-v2 (release binaries)"
 	@echo "  make clean        - Remove build artifacts"
 	@echo "  make rebuild      - Clean and build"
+	@echo "  make test         - Run unit, integration and smoke tests"
 	@echo "  make install      - Install binary (Linux only)"
 	@echo "  make help         - Show this help message"
 	@echo ""
@@ -131,8 +157,10 @@ help:
 # Test target
 .PHONY: test
 test: $(TARGET)
-	@echo "Running tests..."
+	@echo "Running unit and integration tests..."
 	@$(MAKE) -C test test
+	@echo "Running smoke tests..."
+	@bash test/smoke_test.sh ./$(TARGET)
 
 # Dependencies
 -include $(OBJECTS:.o=.d)

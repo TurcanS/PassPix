@@ -142,3 +142,38 @@ TEST_CASE("generateRandomString produces correct length", "[crypto]") {
     std::string r3 = generateRandomString(0);
     REQUIRE(r3.empty());
 }
+
+TEST_CASE("deriveSeedFromKey matches values from the OpenSSL-based v0.3.0", "[crypto][compat]") {
+    // Recorded with the v0.3.0 build. A change here would break decryption of existing images.
+    REQUIRE(deriveSeedFromKey("0123456789abcdef0123456789abcdef", "saltsaltsaltsalt") == 624397948u);
+    REQUIRE(deriveSeedFromKey(std::string("\x00\xff\x10key", 6), "PassPixSalt12345") == 1076205143u);
+}
+
+TEST_CASE("wipeString zeroes and clears the string", "[crypto]") {
+    std::string secret = "a secret that is longer than the small string buffer";
+    const char* buffer = secret.data();
+    const size_t size = secret.size();
+    wipeString(secret);
+
+    REQUIRE(secret.empty());
+    for (size_t i = 0; i < size; i++) {
+        REQUIRE(buffer[i] == 0);
+    }
+
+    std::string empty;
+    wipeString(empty);
+    REQUIRE(empty.empty());
+}
+
+TEST_CASE("deriveKey rejects a salt shorter than 16 bytes", "[crypto]") {
+    REQUIRE(deriveKey("password", "short", KEY_SIZE).empty());
+}
+
+TEST_CASE("encrypt and decrypt reject keys of the wrong size", "[crypto]") {
+    const std::string shortKey = "too-short";
+    REQUIRE(encrypt("data", shortKey).empty());
+
+    std::string key = generateRandomString(KEY_SIZE);
+    std::vector<unsigned char> blob = encrypt("data", key);
+    REQUIRE(decrypt(blob, shortKey).empty());
+}

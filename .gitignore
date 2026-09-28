@@ -47,3 +47,4 @@ docs/
 test/test_runner
 test/*.o
 *.png
+build-cmake/
