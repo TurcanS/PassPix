@@ -2,29 +2,134 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: ['**']
   pull_request:
     branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    # Explicit bash enables pipefail, so piping into tee cannot hide failures
+    shell: bash
+
+env:
+  COMPAT_PASS: ci-compat-master-passphrase
+  COMPAT_SECRET: ci-compat-secret-42!
 
 jobs:
   linux:
+    name: Linux (${{ matrix.compiler }})
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - compiler: gcc
+            cxx: g++
+            extra: ''
+          - compiler: clang
+            cxx: clang++
+            extra: -fuse-ld=lld -Wno-unused-command-line-argument
+    env:
+      CXX: ${{ matrix.cxx }}
+      EXTRA_CXXFLAGS: ${{ matrix.extra }}
     steps:
       - uses: actions/checkout@v4
+
       - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y build-essential libssl-dev libsodium-dev
+        run: sudo apt-get update && sudo apt-get install -y build-essential clang lld libsodium-dev
+
       - name: Build
-        run: make PORTABLE=1
+        run: make PORTABLE=1 WERROR=1
+
+      - name: Test (unit, integration, smoke)
+        run: make PORTABLE=1 WERROR=1 test 2>&1 | tee test-output.log
+
+      - name: Create compatibility sample
+        if: matrix.compiler == 'gcc'
+        run: |
+          mkdir -p compat
+          cp passpix compat/
+          cd compat
+          NAME=$(printf '%s\n%s\n%s\n' "$COMPAT_PASS" "$COMPAT_PASS" "$COMPAT_SECRET" | ./passpix encrypt)
+          mv "$NAME" linux.png
+
+      - name: Upload compatibility sample
+        if: matrix.compiler == 'gcc'
+        uses: actions/upload-artifact@v4
+        with:
+          name: compat-linux
+          path: compat/
+
+      - name: Upload test output
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-output-linux-${{ matrix.compiler }}
+          path: test-output.log
+          if-no-files-found: ignore
+
+  sanitizers:
+    name: Linux (ASan + UBSan)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      ASAN_OPTIONS: detect_leaks=1
+      UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y build-essential libsodium-dev
+
+      - name: Build and test with sanitizers
+        run: make SANITIZE=1 WERROR=1 test 2>&1 | tee test-output.log
+
+      - name: Upload test output
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-output-sanitizers
+          path: test-output.log
+          if-no-files-found: ignore
+
+  cmake:
+    name: Linux (CMake)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y build-essential cmake pkg-config libsodium-dev
+
+      - name: Configure
+        run: cmake -S . -B build-cmake -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build-cmake -j
+
       - name: Test
-        run: make test
+        run: ctest --test-dir build-cmake --output-on-failure
 
   windows:
+    name: Windows (MinGW)
     runs-on: windows-latest
+    timeout-minutes: 30
     defaults:
       run:
         shell: msys2 {0}
     steps:
       - uses: actions/checkout@v4
+
       - uses: msys2/setup-msys2@v2
         with:
           msystem: ucrt64
@@ -32,9 +137,79 @@ jobs:
           install: >-
             base-devel
             mingw-w64-ucrt-x86_64-toolchain
-            mingw-w64-ucrt-x86_64-openssl
             mingw-w64-ucrt-x86_64-libsodium
+
       - name: Build
-        run: make PORTABLE=1
-      - name: Test
-        run: make test
+        run: make PORTABLE=1 WERROR=1
+
+      - name: Test (unit, integration, smoke)
+        run: |
+          set -o pipefail
+          make PORTABLE=1 WERROR=1 test 2>&1 | tee test-output.log
+
+      - name: Create compatibility sample
+        run: |
+          mkdir -p compat
+          cp passpix.exe compat/
+          cd compat
+          NAME=$(printf '%s\n%s\n%s\n' "$COMPAT_PASS" "$COMPAT_PASS" "$COMPAT_SECRET" | ./passpix.exe encrypt | tr -d '\r')
+          mv "$NAME" windows.png
+
+      - name: Upload compatibility sample
+        uses: actions/upload-artifact@v4
+        with:
+          name: compat-windows
+          path: compat/
+
+      - name: Upload test output
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-output-windows
+          path: test-output.log
+          if-no-files-found: ignore
+
+  compat:
+    name: Compatibility (${{ matrix.reader }} reads ${{ matrix.writer }} image)
+    needs: [linux, windows]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            reader: linux
+            writer: windows
+            binary: passpix
+          - os: windows-latest
+            reader: windows
+            writer: linux
+            binary: passpix.exe
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Install libsodium runtime
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libsodium-dev
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: compat-${{ matrix.reader }}
+          path: reader
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: compat-${{ matrix.writer }}
+          path: writer
+
+      - name: Decrypt the other platform's image
+        run: |
+          chmod +x "reader/${{ matrix.binary }}"
+          RESULT=$(printf '%s\n' "$COMPAT_PASS" | "reader/${{ matrix.binary }}" decrypt "writer/${{ matrix.writer }}.png" | tr -d '\r')
+          if [ "$RESULT" != "$COMPAT_SECRET" ]; then
+            echo "::error::Expected the stored secret, got '$RESULT'"
+            exit 1
+          fi
+          echo "${{ matrix.reader }} binary decrypted the ${{ matrix.writer }} image correctly"

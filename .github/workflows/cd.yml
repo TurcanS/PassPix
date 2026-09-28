@@ -5,6 +5,9 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: read
+
 jobs:
   build:
     strategy:
@@ -12,10 +15,13 @@ jobs:
         include:
           - os: ubuntu-latest
             target: linux
-            packages: build-essential libssl-dev libsodium-dev
+            packages: build-essential libsodium-dev
+            binary: passpix
           - os: windows-latest
             target: windows
+            binary: passpix.exe
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     defaults:
       run:
         shell: ${{ matrix.target == 'windows' && 'msys2 {0}' || 'bash' }}
@@ -34,11 +40,25 @@ jobs:
           install: >-
             base-devel
             mingw-w64-ucrt-x86_64-toolchain
-            mingw-w64-ucrt-x86_64-openssl
             mingw-w64-ucrt-x86_64-libsodium
 
       - name: Build
-        run: make PORTABLE=1
+        run: make PORTABLE=1 WERROR=1
+
+      # A failing test blocks the release
+      - name: Test (unit, integration, smoke)
+        run: make PORTABLE=1 WERROR=1 test
+
+      - name: Check version matches tag
+        env:
+          BINARY: ${{ matrix.binary }}
+        run: |
+          EXPECTED="passpix ${GITHUB_REF_NAME#v}"
+          ACTUAL=$("./$BINARY" --version | tr -d '\r')
+          if [ "$ACTUAL" != "$EXPECTED" ]; then
+            echo "::error::Binary reports '$ACTUAL' but the tag is '$GITHUB_REF_NAME'. Update src/version.h."
+            exit 1
+          fi
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
